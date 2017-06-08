@@ -1,0 +1,58 @@
+<apex:page >
+  <apex:includeScript value="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.2.min.js"/>
+  <script>
+    var workflowCount = 0;
+    var counter = 0;
+    jQuery(document).ready(function($) {
+      // Pull 10 Accounts via the REST API
+      $.ajax('/services/data/v36.0/tooling/query?q=Select+count()+From+WorkflowRule',
+        {
+          beforeSend: function(xhr) {
+            // Set the OAuth header from the session ID
+            xhr.setRequestHeader('Authorization', 'Bearer {!$Api.Session_ID}');
+          },
+          success: function(response) {
+            console.log(response);
+            // We got 'em - append our records to the HTML list
+            workflowCount = response.size;
+            counter = 0;
+            recorsiveFunc();
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            // Oops - what went wrong?
+            alert(jqXHR.status + ': ' + errorThrown);
+          }
+        }
+      );
+    });
+    
+    
+    function recorsiveFunc(){
+         $.ajax('/services/data/v36.0/tooling/query?q=Select+Id,Name,TableEnumOrId,MetaData+From+WorkflowRule+LIMIT+1+OFFSET+'+counter,
+        {
+          beforeSend: function(xhr) {
+            // Set the OAuth header from the session ID
+            xhr.setRequestHeader('Authorization', 'Bearer {!$Api.Session_ID}');
+          },
+          success: function(response) {
+            console.log(JSON.stringify(response));
+            $('#accountList').append('<li>'+JSON.stringify(response)+'</li>');  
+            if(workflowCount!=1 && workflowCount != undefined){   
+                workflowCount--; 
+                counter++;
+                recorsiveFunc();
+            } 
+          },
+          error: function(jqXHR, textStatus, errorThrown) {
+            // Oops - what went wrong?
+            alert(jqXHR.status + ': ' + errorThrown);
+          }
+        }
+      );
+    }
+  </script>
+  <h1>Test REST API Without Proxy</h1>
+  <p>10 Accounts:</p>
+  <ul id="accountList">
+  </ul>
+</apex:page>
